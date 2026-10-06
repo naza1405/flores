@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gastos Flores - Control Financiero y Stock por Colores</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bloom: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                        },
+                        lilac: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            200: '#e9d5ff',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                        },
+                        leaf: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fdfbf7;
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #e11d48;
+            color: #e11d48;
+            font-weight: 700;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header class="bg-white/90 backdrop-blur-md border-b border-rose-100 shadow-xs sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-gradient-to-tr from-bloom-500 to-lilac-500 p-3 rounded-2xl text-white shadow-md shadow-bloom-200">
+                            <i class="fa-solid fa-seedling text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                Gastos Flores
+                                <span class="bg-rose-100 text-rose-800 text-[11px] px-2.5 py-0.5 rounded-full font-bold">Flores Eternas</span>
+                            </h1>
+                            <p class="text-xs text-slate-500">Control Financiero & Inventario Detallado por Colores</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetToDefaults()" title="Restablecer datos iniciales" 
+                            class="text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span class="hidden sm:inline">Restablecer Datos</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex space-x-6 sm:space-x-8 border-t border-slate-100 pt-1 overflow-x-auto custom-scrollbar">
+                    <button id="tab-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-chart-pie text-base"></i>
+                        Balance y Finanzas
+                    </button>
+                    <button id="tab-color-stock" onclick="switchTab('color-stock')" class="tab-btn text-slate-500 hover:text-slate-700 py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-palette text-base text-lilac-600"></i>
+                        Stock por Colores
+                        <span id="color-stock-alert-badge" class="hidden bg-amber-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+                    </button>
+                    <button id="tab-gastos" onclick="switchTab('gastos')" class="tab-btn text-slate-500 hover:text-slate-700 py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-receipt text-base"></i>
+                        Gastos Insumos
+                    </button>
+                    <button id="tab-ventas" onclick="switchTab('ventas')" class="tab-btn text-slate-500 hover:text-slate-700 py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-hand-holding-dollar text-base text-leaf-600"></i>
+                        Ventas e Ingresos
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-leaf-400"></i>
+                <span id="toast-message" class="text-sm font-medium"></span>
+            </div>
+
+            <!-- VISTA DASHBOARD -->
+            <section id="view-dashboard" class="space-y-8">
+                <!-- Tarjetas KPI -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-rose-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Gastado</p>
+                            <h3 class="text-2xl font-black text-rose-600 mt-1" id="dash-gastos">$0</h3>
+                            <p class="text-xs text-slate-500 mt-1">Materiales e insumos</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-arrow-down-long"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-leaf-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ingresos</p>
+                            <h3 class="text-2xl font-black text-leaf-600 mt-1" id="dash-ingresos">$0</h3>
+                            <p class="text-xs text-slate-500 mt-1">Ventas realizadas</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-leaf-50 text-leaf-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-arrow-up-long"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Balance Neto</p>
+                            <h3 class="text-2xl font-black mt-1" id="dash-balance">$0</h3>
+                            <p class="text-xs text-slate-500 mt-1" id="dash-balance-lbl">Ganancia / Pérdida</p>
+                        </div>
+                        <div id="dash-balance-icon-bg" class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-scale-balanced" id="dash-balance-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-lilac-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ventas Totales</p>
+                            <h3 class="text-2xl font-black text-slate-800 mt-1" id="dash-cant-ventas">0</h3>
+                            <p class="text-xs text-slate-500 mt-1">Pedidos entregados</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-lilac-50 text-lilac-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos del Dashboard -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+                        <h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-bloom-500"></i>
+                            Balance Financiero (Ingresos vs. Gastos)
+                        </h2>
+                        <p class="text-xs text-slate-500 mb-4">Relación directa entre las ganancias de ventas y los costos de insumos.</p>
+                        <div class="relative h-64">
+                            <canvas id="chart-balance"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+                        <h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-lilac-500"></i>
+                            Desglose de Gastos por Material
+                        </h2>
+                        <p class="text-xs text-slate-500 mb-4">Distribución del capital invertido ($62.300+)</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            <div class="relative h-52">
+                                <canvas id="chart-gastos-cat"></canvas>
+                            </div>
+                            <div id="dashboard-cat-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar">
+                                <!-- Generado con JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-color-stock" class="hidden space-y-8">
+                <div class="bg-gradient-to-r from-lilac-500 via-rose-400 to-amber-400 p-6 rounded-3xl text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-2xl"></i>
+                            Control de Stock por Colores y Variedades
+                        </h2>
+                        <p class="text-xs text-rose-50 opacity-90 mt-1 max-w-2xl">
+                            Administra con precisión el stock de cada color para <b>Limpiapipas</b> y <b>Cintas de Raso</b>. Agrega nuevos tonos, ajusta las unidades disponibles y mantén tu inventario de insumos al día.
+                        </p>
+                    </div>
+                    <button onclick="openModalColor()" class="bg-white text-slate-900 hover:bg-rose-50 font-bold px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-plus-circle text-rose-500"></i>
+                        Añadir Nuevo Color
+                    </button>
+                </div>
+
+                <div class="flex border-b border-slate-200 space-x-6 text-sm font-semibold">
+                    <button id="subtab-limpiapipas" onclick="switchStockSubtab('limpiapipas')" class="pb-3 text-rose-600 border-b-2 border-rose-600 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Limpiapipas
+                    </button>
+                    <button id="subtab-cintas" onclick="switchStockSubtab('cintas')" class="pb-3 text-slate-400 hover:text-slate-600 flex items-center gap-2">
+                        <i class="fa-solid fa-ribbon"></i> Cintas de Raso
+                    </button>
+                    <button id="subtab-generales" onclick="switchStockSubtab('generales')" class="pb-3 text-slate-400 hover:text-slate-600 flex items-center gap-2">
+                        <i class="fa-solid fa-box-open"></i> Insumos Generales
+                    </button>
+                </div>
+
+                <div id="stock-sec-limpiapipas" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            Inventario de Limpiapipas por Colores
+                        </h3>
+                        <span class="text-xs text-slate-400" id="count-limpiapipas">0 colores registrados</span>
+                    </div>
+
+                    <div id="grid-limpiapipas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+                <div id="stock-sec-cintas" class="hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            Inventario de Cintas de Raso por Colores y Anchos
+                        </h3>
+                        <span class="text-xs text-slate-400" id="count-cintas">0 variedades registradas</span>
+                    </div>
+
+                    <div id="grid-cintas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+
+                <div id="stock-sec-generales" class="hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-lilac-500"></span>
+                            Insumos y Materiales de Soporte Generales
+                        </h3>
+                        <button onclick="openModalGeneral()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Nuevo Insumo General
+                        </button>
+                    </div>
+
+                    <div id="grid-generales" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-gastos" class="hidden space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 h-fit">
+                        <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-cart-plus text-rose-500"></i>
+                            Registrar Compras / Gastos
+                        </h2>
+
+                        <form id="form-gasto" onsubmit="handleGastoSubmit(event)" class="space-y-4">
+                            <input type="hidden" id="gasto-id" value="">
+                            
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Material / Categoría *</label>
+                                <select id="gasto-categoria" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                                    <option value="Limpiapipas">Limpiapipas</option>
+                                    <option value="Cinta raso">Cinta raso</option>
+                                    <option value="Palitos">Palitos</option>
+                                    <option value="Silicona">Silicona</option>
+                                    <option value="Macetas">Macetas</option>
+                                    <option value="Otros">Otros insumos (Papel, cinta flora, etc.)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción de la compra *</label>
+                                <input type="text" id="gasto-descripcion" placeholder="Ej. Paquete limpiapipas amarillo y verde" required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Monto ($ ARS) *</label>
+                                    <input type="number" id="gasto-monto" min="1" step="0.01" placeholder="0.00" required
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha</label>
+                                    <input type="date" id="gasto-fecha" required
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                                </div>
+                            </div>
+
+                            <div class="pt-2 flex gap-2">
+                                <button type="submit" id="btn-save-gasto" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-medium py-2.5 px-4 rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-floppy-disk"></i>
+                                    <span>Guardar Gasto</span>
+                                </button>
+                                <button type="button" id="btn-cancel-gasto" onclick="resetGastoForm()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2.5 px-3 rounded-xl text-sm transition">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-xs border border-slate-100 overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-list-ul text-rose-500"></i>
+                                        Historial de Gastos Registrados
+                                    </h2>
+                                    <p class="text-xs text-slate-500">Incluye la inversión inicial de $62.300 y nuevos gastos</p>
+                                </div>
+                                <input type="text" id="filter-gastos" onkeyup="filterGastosTable()" placeholder="Buscar gasto..." 
+                                    class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400 w-full sm:w-48">
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-100">
+                                            <th class="py-3 px-5">Fecha</th>
+                                            <th class="py-3 px-5">Categoría</th>
+                                            <th class="py-3 px-5">Descripción</th>
+                                            <th class="py-3 px-5 text-right">Monto</th>
+                                            <th class="py-3 px-5 text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-gastos-body" class="divide-y divide-slate-100">
+                                        <!-- Dinámico -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DESDE LÍNEA 320: VISTA DE VENTAS, MODALES Y SCRIPT JS COMPLETO -->
+            <section id="view-ventas" class="hidden space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Formulario de Registro de Ventas -->
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 h-fit">
+                        <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-cash-register text-leaf-600"></i>
+                            Registrar Nueva Venta / Ingreso
+                        </h2>
+
+                        <form id="form-venta" onsubmit="handleVentaSubmit(event)" class="space-y-4">
+                            <input type="hidden" id="venta-id" value="">
+                            
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Arreglo / Producto *</label>
+                                <select id="venta-categoria" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-leaf-500 focus:outline-none">
+                                    <option value="Ramo Cinta Raso">Ramo de Cinta Raso</option>
+                                    <option value="Arreglo Limpiapipas">Arreglo de Limpiapipas</option>
+                                    <option value="Maceta Decorada">Maceta Decorada</option>
+                                    <option value="Flor Individual">Flor Individual</option>
+                                    <option value="Personalizado">Arreglo Especial / Personalizado</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Detalle / Cliente *</label>
+                                <input type="text" id="venta-descripcion" placeholder="Ej. Ramo x12 Tulipanes amarillos - Cliente Sofía" required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-leaf-500 focus:outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad *</label>
+                                    <input type="number" id="venta-cantidad" min="1" value="1" required
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-leaf-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Cobrado Total ($) *</label>
+                                    <input type="number" id="venta-monto" min="1" step="0.01" placeholder="0.00" required
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-leaf-500 focus:outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha de la Venta *</label>
+                                <input type="date" id="venta-fecha" required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-leaf-500 focus:outline-none">
+                            </div>
+
+                            <div class="pt-2 flex gap-2">
+                                <button type="submit" id="btn-save-venta" class="flex-1 bg-leaf-600 hover:bg-leaf-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm shadow-md transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-circle-plus"></i>
+                                    <span>Registrar Ingreso</span>
+                                </button>
+                                <button type="button" id="btn-cancel-venta" onclick="resetVentaForm()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2.5 px-3 rounded-xl text-sm transition">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tabla de Ventas -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-xs border border-slate-100 overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-receipt text-leaf-600"></i>
+                                        Historial de Ingresos y Ventas
+                                    </h2>
+                                    <p class="text-xs text-slate-500">Registro de todas las flores eternas vendidas</p>
+                                </div>
+                                <input type="text" id="filter-ventas" onkeyup="filterVentasTable()" placeholder="Buscar venta..." 
+                                    class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-leaf-500 w-full sm:w-48">
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-100">
+                                            <th class="py-3 px-5">Fecha</th>
+                                            <th class="py-3 px-5">Categoría</th>
+                                            <th class="py-3 px-5">Detalle</th>
+                                            <th class="py-3 px-5 text-center">Cant.</th>
+                                            <th class="py-3 px-5 text-right">Ingreso ($)</th>
+                                            <th class="py-3 px-5 text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla-ventas-body" class="divide-y divide-slate-100">
+                                        <!-- Dinámico -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL NUEVO COLOR DE STOCK -->
+    <div id="modal-color-stock" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative border border-slate-100">
+            <button onclick="closeModalColor()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-palette text-lilac-600"></i>
+                Añadir Variedad / Color
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Añade una opción de color para limpiapipas o cinta de raso.</p>
+
+            <form id="form-color-stock" onsubmit="handleColorSubmit(event)" class="space-y-4">
+                <input type="hidden" id="color-id" value="">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Material *</label>
+                    <select id="color-material-tipo" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-lilac-500 focus:outline-none">
+                        <option value="Limpiapipas">Limpiapipas</option>
+                        <option value="Cinta raso">Cinta Raso</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del Color / Tono *</label>
+                    <input type="text" id="color-nombre" placeholder="Ej. Rosa Pastel, Amarillo Sol, Rojo Pasión" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-lilac-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Ancho / Medida (Opcional - para Cintas)</label>
+                    <input type="text" id="color-ancho" placeholder="Ej. 2.5 cm, 4 cm, Estándar"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-lilac-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tono de Color *</label>
+                        <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1.5">
+                            <input type="color" id="color-hex" value="#f43f5e" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent">
+                            <span class="text-xs text-slate-500 font-mono" id="color-hex-label">#f43f5e</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad de Medida *</label>
+                        <input type="text" id="color-unidad" placeholder="paquetes, rollos, unids" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-lilac-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Stock Inicial *</label>
+                        <input type="number" id="color-cantidad" min="0" value="10" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-lilac-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Alerta Stock Bajo *</label>
+                        <input type="number" id="color-minimo" min="1" value="3" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-lilac-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex gap-2">
+                    <button type="button" onclick="closeModalColor()" class="w-1/2 bg-slate-100 text-slate-600 font-medium py-2 rounded-xl text-sm hover:bg-slate-200">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-1/2 bg-lilac-600 hover:bg-lilac-700 text-white font-medium py-2 rounded-xl text-sm shadow-md">
+                        Guardar Color
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL INSUMOS GENERALES -->
+    <div id="modal-general-stock" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative border border-slate-100">
+            <button onclick="closeModalGeneral()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-box-archive text-rose-500"></i>
+                Insumo General
+            </h3>
+
+            <form id="form-general-stock" onsubmit="handleGeneralSubmit(event)" class="space-y-4">
+                <input type="hidden" id="general-id" value="">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del Material *</label>
+                    <input type="text" id="general-nombre" placeholder="Ej. Palitos de Brochette, Silicona, Flora Tape" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Cantidad *</label>
+                        <input type="number" id="general-cantidad" min="0" value="10" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Unidad *</label>
+                        <input type="text" id="general-unidad" placeholder="unidades, paquetes, barras" required
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Alerta Stock Bajo *</label>
+                    <input type="number" id="general-minimo" min="1" value="5" required
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                </div>
+
+                <div class="pt-3 flex gap-2">
+                    <button type="button" onclick="closeModalGeneral()" class="w-1/2 bg-slate-100 text-slate-600 font-medium py-2 rounded-xl text-sm hover:bg-slate-200">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-1/2 bg-rose-500 hover:bg-rose-600 text-white font-medium py-2 rounded-xl text-sm shadow-md">
+                        Guardar Insumo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMACIÓN DE ELIMINACIÓN -->
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-slate-100 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-500 flex items-center justify-center text-xl mx-auto mb-4">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 id="modal-confirm-title" class="text-base font-bold text-slate-800 mb-1">¿Eliminar registro?</h3>
+            <p id="modal-confirm-msg" class="text-xs text-slate-500 mb-6">Esta acción eliminará el registro y actualizará el balance automáticamente.</p>
+
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-100 text-slate-600 font-medium py-2.5 rounded-xl text-xs hover:bg-slate-200 transition">
+                    Cancelar
+                </button>
+                <button id="modal-confirm-btn" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-medium py-2.5 rounded-xl text-xs shadow-md transition">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-slate-100 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            <p>© Gastos Flores - Sistema Especializado en Flores Eternas de Cinta y Limpiapipas</p>
+        </div>
+    </footer>
+
+    <script>
+        // DATOS INICIALES DANIEL Y ENCARGADA DE COSTOS ($62.300 TOTAL INICIAL)
+        const INITIAL_GASTOS = [
+            { id: "g1", fecha: "2026-03-01", categoria: "Limpiapipas", descripcion: "Lote de limpiapipas variados #1", monto: 8400 },
+            { id: "g2", fecha: "2026-03-02", categoria: "Limpiapipas", descripcion: "Lote de limpiapipas variados #2", monto: 3400 },
+            { id: "g3", fecha: "2026-03-05", categoria: "Limpiapipas", descripcion: "Lote de limpiapipas variados #3", monto: 4500 },
+            { id: "g4", fecha: "2026-03-10", categoria: "Limpiapipas", descripcion: "Lote de limpiapipas especial #4", monto: 11800 },
+            { id: "g5", fecha: "2026-03-12", categoria: "Cinta raso", descripcion: "Rollos de cinta raso varios tonos", monto: 30000 },
+            { id: "g6", fecha: "2026-03-15", categoria: "Palitos", descripcion: "Palitos de brochette para soporte", monto: 1500 },
+            { id: "g7", fecha: "2026-03-18", categoria: "Silicona", descripcion: "Barras de silicona caliente", monto: 2100 },
+            { id: "g8", fecha: "2026-03-20", categoria: "Macetas", descripcion: "Macetas pequeñas para arreglos", monto: 600 }
+        ];
+
+        const INITIAL_VENTAS = [
+            { id: "v1", fecha: "2026-03-22", categoria: "Ramo Cinta Raso", descripcion: "Ramo de 12 Girasoles de Cinta Raso", cantidad: 1, monto: 32000 },
+            { id: "v2", fecha: "2026-03-25", categoria: "Arreglo Limpiapipas", descripcion: "Ramo de Tulipanes de Limpiapipas", cantidad: 2, monto: 24000 },
+            { id: "v3", fecha: "2026-03-28", categoria: "Maceta Decorada", descripcion: "Maceta con Margaritas Eternas", cantidad: 1, monto: 16500 }
+        ];
+
+        const INITIAL_COLOR_STOCK = [
+            { id: "c1", tipo: "Limpiapipas", nombre: "Verde Hoja / Tallo", hex: "#16a34a", ancho: "", cantidad: 25, unidad: "paquetes", minimo: 5 },
+            { id: "c2", tipo: "Limpiapipas", nombre: "Amarillo Girasol", hex: "#eab308", ancho: "", cantidad: 18, unidad: "paquetes", minimo: 4 },
+            { id: "c3", tipo: "Limpiapipas", nombre: "Rosa Pastel", hex: "#f472b6", ancho: "", cantidad: 12, unidad: "paquetes", minimo: 4 },
+            { id: "c4", tipo: "Limpiapipas", nombre: "Rojo Pasión", hex: "#e11d48", ancho: "", cantidad: 2, unidad: "paquetes", minimo: 5 },
+            { id: "c5", tipo: "Limpiapipas", nombre: "Morado / Lavanda", hex: "#a855f7", ancho: "", cantidad: 8, unidad: "paquetes", minimo: 3 },
+            { id: "c6", tipo: "Limpiapipas", nombre: "Blanco Nieve", hex: "#f8fafc", ancho: "", cantidad: 15, unidad: "paquetes", minimo: 4 },
+
+            { id: "cr1", tipo: "Cinta raso", nombre: "Rosa Chicle", hex: "#ec4899", ancho: "2.5 cm", cantidad: 8, unidad: "rollos", minimo: 2 },
+            { id: "cr2", tipo: "Cinta raso", nombre: "Rojo Carmín", hex: "#be123c", ancho: "4 cm", cantidad: 1, unidad: "rollos", minimo: 3 },
+            { id: "cr3", tipo: "Cinta raso", nombre: "Amarillo Dorado", hex: "#f59e0b", ancho: "2.5 cm", cantidad: 6, unidad: "rollos", minimo: 2 },
+            { id: "cr4", tipo: "Cinta raso", nombre: "Crema / Beige", hex: "#fef3c7", ancho: "2.5 cm", cantidad: 10, unidad: "rollos", minimo: 2 },
+            { id: "cr5", tipo: "Cinta raso", nombre: "Verde Esmeralda", hex: "#059669", ancho: "2.5 cm", cantidad: 5, unidad: "rollos", minimo: 2 }
+        ];
+
+        const INITIAL_GENERAL_STOCK = [
+            { id: "s1", nombre: "Palitos de Brochette / Madera", cantidad: 120, unidad: "unidades", minimo: 30 },
+            { id: "s2", nombre: "Barras de Silicona Delgado", cantidad: 4, unidad: "barras", minimo: 10 },
+            { id: "s3", nombre: "Macetas Plásticas Pequeñas", cantidad: 8, unidad: "unidades", minimo: 5 },
+            { id: "s4", nombre: "Cinta Engomada / Flora Tape", cantidad: 3, unidad: "rollos", minimo: 2 },
+            { id: "s5", nombre: "Papel Coreano de Envoltura", cantidad: 15, unidad: "pliegos", minimo: 5 }
+        ];
+
+        const CATEGORY_COLORS = {
+            'Limpiapipas': { bg: 'bg-emerald-100', text: 'text-emerald-800', chart: '#10b981' },
+            'Cinta raso': { bg: 'bg-amber-100', text: 'text-amber-800', chart: '#f59e0b' },
+            'Palitos': { bg: 'bg-amber-200/50', text: 'text-amber-900', chart: '#d97706' },
+            'Silicona': { bg: 'bg-blue-100', text: 'text-blue-800', chart: '#3b82f6' },
+            'Macetas': { bg: 'bg-purple-100', text: 'text-purple-800', chart: '#a855f7' },
+            'Otros': { bg: 'bg-slate-100', text: 'text-slate-800', chart: '#64748b' }
+        };
+
+        // Estado global de la app
+        let gastos = [];
+        let ventas = [];
+        let colorStock = [];
+        let generalStock = [];
+
+        let chartBalance = null;
+        let chartGastosCat = null;
+        let pendingConfirmCallback = null;
+
+        window.onload = function() {
+            setTodayDates();
+            setupColorPickerListener();
+            loadStorage();
+            renderAll();
+        };
+
+        function showConfirmModal(title, message, onConfirm) {
+            document.getElementById('modal-confirm-title').innerText = title;
+            document.getElementById('modal-confirm-msg').innerText = message;
+            pendingConfirmCallback = onConfirm;
+            
+            const btn = document.getElementById('modal-confirm-btn');
+            btn.onclick = function() {
+                if (pendingConfirmCallback) pendingConfirmCallback();
+                closeConfirmModal();
+            };
+            
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            pendingConfirmCallback = null;
+        }
+
+        function setTodayDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('gasto-fecha').value = today;
+            document.getElementById('venta-fecha').value = today;
+        }
+
+        function setupColorPickerListener() {
+            const inputHex = document.getElementById('color-hex');
+            const labelHex = document.getElementById('color-hex-label');
+            inputHex.addEventListener('input', (e) => {
+                labelHex.innerText = e.target.value;
+            });
+        }
+
+        function loadStorage() {
+            const sGastos = localStorage.getItem('gf_v2_gastos');
+            const sVentas = localStorage.getItem('gf_v2_ventas');
+            const sColors = localStorage.getItem('gf_v2_colors');
+            const sGen = localStorage.getItem('gf_v2_gen');
+
+            gastos = sGastos ? JSON.parse(sGastos) : [...INITIAL_GASTOS];
+            ventas = sVentas ? JSON.parse(sVentas) : [...INITIAL_VENTAS];
+            colorStock = sColors ? JSON.parse(sColors) : [...INITIAL_COLOR_STOCK];
+            generalStock = sGen ? JSON.parse(sGen) : [...INITIAL_GENERAL_STOCK];
+        }
+
+        function saveStorage() {
+            localStorage.setItem('gf_v2_gastos', JSON.stringify(gastos));
+            localStorage.setItem('gf_v2_ventas', JSON.stringify(ventas));
+            localStorage.setItem('gf_v2_colors', JSON.stringify(colorStock));
+            localStorage.setItem('gf_v2_gen', JSON.stringify(generalStock));
+            renderAll();
+        }
+
+        function resetToDefaults() {
+            showConfirmModal(
+                "¿Restablecer Datos?",
+                "¿Deseas restablecer todos los gastos ($62.300 iniciales), ventas e inventario de colores a su estado inicial?",
+                () => {
+                    gastos = JSON.parse(JSON.stringify(INITIAL_GASTOS));
+                    ventas = JSON.parse(JSON.stringify(INITIAL_VENTAS));
+                    colorStock = JSON.parse(JSON.stringify(INITIAL_COLOR_STOCK));
+                    generalStock = JSON.parse(JSON.stringify(INITIAL_GENERAL_STOCK));
+                    saveStorage();
+                    showToast("Datos restablecidos al estado inicial");
+                }
+            );
+        }
+
+        function switchTab(tabName) {
+            ['dashboard', 'color-stock', 'gastos', 'ventas'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active');
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'dashboard') {
+                renderCharts();
+            }
+        }
+
+        function switchStockSubtab(sub) {
+            ['limpiapipas', 'cintas', 'generales'].forEach(s => {
+                document.getElementById(`stock-sec-${s}`).classList.add('hidden');
+                const btn = document.getElementById(`subtab-${s}`);
+                btn.className = "pb-3 text-slate-400 hover:text-slate-600 flex items-center gap-2 font-semibold";
+            });
+
+            document.getElementById(`stock-sec-${sub}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`subtab-${sub}`);
+            activeBtn.className = "pb-3 text-rose-600 border-b-2 border-rose-600 flex items-center gap-2 font-bold";
+        }
+
+        function renderAll() {
+            renderKPIs();
+            renderColorStockGrids();
+            renderGeneralStockGrid();
+            renderGastosTable();
+            renderVentasTable();
+            renderCharts();
+        }
+
+        function formatMoney(num) {
+            return '$' + Number(num).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function renderKPIs() {
+            const totalGastos = gastos.reduce((sum, item) => sum + Number(item.monto), 0);
+            const totalIngresos = ventas.reduce((sum, item) => sum + Number(item.monto), 0);
+            const balanceNeto = totalIngresos - totalGastos;
+
+            document.getElementById('dash-gastos').innerText = formatMoney(totalGastos);
+            document.getElementById('dash-ingresos').innerText = formatMoney(totalIngresos);
+            document.getElementById('dash-cant-ventas').innerText = ventas.length;
+
+            const dashBalance = document.getElementById('dash-balance');
+            const dashBalanceLbl = document.getElementById('dash-balance-lbl');
+            const iconBg = document.getElementById('dash-balance-icon-bg');
+            
+            dashBalance.innerText = formatMoney(balanceNeto);
+
+            if (balanceNeto >= 0) {
+                dashBalance.className = "text-2xl font-black text-leaf-600 mt-1";
+                dashBalanceLbl.innerText = "Ganancia neta positiva";
+                dashBalanceLbl.className = "text-xs text-leaf-600 font-medium mt-1";
+                iconBg.className = "w-12 h-12 rounded-2xl bg-leaf-50 text-leaf-600 flex items-center justify-center text-xl";
+            } else {
+                dashBalance.className = "text-2xl font-black text-rose-600 mt-1";
+                dashBalanceLbl.innerText = "Inversión supera los ingresos";
+                dashBalanceLbl.className = "text-xs text-rose-600 font-medium mt-1";
+                iconBg.className = "w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl";
+            }
+
+            const lowColor = colorStock.filter(c => Number(c.cantidad) <= Number(c.minimo)).length;
+            const lowGen = generalStock.filter(g => Number(g.cantidad) <= Number(g.minimo)).length;
+            const totalLow = lowColor + lowGen;
+
+            const badge = document.getElementById('color-stock-alert-badge');
+            if (totalLow > 0) {
+                badge.innerText = totalLow;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function renderCharts() {
+            const ctxBalance = document.getElementById('chart-balance').getContext('2d');
+            const totalGastos = gastos.reduce((s, g) => s + Number(g.monto), 0);
+            const totalIngresos = ventas.reduce((s, v) => s + Number(v.monto), 0);
+
+            if (chartBalance) chartBalance.destroy();
+
+            chartBalance = new Chart(ctxBalance, {
+                type: 'bar',
+                data: {
+                    labels: ['Inversión en Insumos', 'Ingresos por Ventas'],
+                    datasets: [{
+                        data: [totalGastos, totalIngresos],
+                        backgroundColor: ['#f43f5e', '#16a34a'],
+                        borderRadius: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: function(v) { return '$' + v; } }
+                        }
+                    }
+                }
+            });
+
+            const ctxCat = document.getElementById('chart-gastos-cat').getContext('2d');
+            const totalsByCat = {};
+            Object.keys(CATEGORY_COLORS).forEach(c => totalsByCat[c] = 0);
+
+            gastos.forEach(g => {
+                totalsByCat[g.categoria] = (totalsByCat[g.categoria] || 0) + Number(g.monto);
+            });
+
+            const categories = Object.keys(totalsByCat);
+            const values = categories.map(c => totalsByCat[c]);
+            const bgColors = categories.map(c => CATEGORY_COLORS[c]?.chart || '#64748b');
+
+            if (chartGastosCat) chartGastosCat.destroy();
+
+            chartGastosCat = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: bgColors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '68%'
+                }
+            });
+
+            const catListContainer = document.getElementById('dashboard-cat-list');
+            catListContainer.innerHTML = '';
+            categories.forEach(cat => {
+                const val = totalsByCat[cat];
+                if (val > 0) {
+                    const color = CATEGORY_COLORS[cat]?.chart || '#64748b';
+                    const div = document.createElement('div');
+                    div.className = "flex items-center justify-between text-xs p-2 rounded-xl bg-slate-50 border border-slate-100";
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full" style="background-color: ${color}"></span>
+                            <span class="font-semibold text-slate-700">${cat}</span>
+                        </div>
+                        <span class="font-bold text-slate-800">${formatMoney(val)}</span>
+                    `;
+                    catListContainer.appendChild(div);
+                }
+            });
+        }
+
+        function renderColorStockGrids() {
+            const gridLimpiapipas = document.getElementById('grid-limpiapipas');
+            const gridCintas = document.getElementById('grid-cintas');
+
+            gridLimpiapipas.innerHTML = '';
+            gridCintas.innerHTML = '';
+
+            const listLimpiapipas = colorStock.filter(c => c.tipo === 'Limpiapipas');
+            const listCintas = colorStock.filter(c => c.tipo === 'Cinta raso');
+
+            document.getElementById('count-limpiapipas').innerText = `${listLimpiapipas.length} colores registrados`;
+            document.getElementById('count-cintas').innerText = `${listCintas.length} variedades registradas`;
+
+            if (listLimpiapipas.length === 0) {
+                gridLimpiapipas.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No hay colores de limpiapipas registrados.</div>`;
+            } else {
+                listLimpiapipas.forEach(item => gridLimpiapipas.appendChild(createColorCard(item)));
+            }
+
+            if (listCintas.length === 0) {
+                gridCintas.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No hay colores de cinta raso registrados.</div>`;
+            } else {
+                listCintas.forEach(item => gridCintas.appendChild(createColorCard(item)));
+            }
+        }
+
+        function createColorCard(item) {
+            const isLow = Number(item.cantidad) <= Number(item.minimo);
+            const card = document.createElement('div');
+            card.className = `bg-white p-4 rounded-2xl shadow-xs border transition relative flex flex-col justify-between ${
+                isLow ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-100'
+            }`;
+
+            card.innerHTML = `
+                ${isLow ? `
+                    <div class="absolute -top-2.5 right-3 bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+                        <i class="fa-solid fa-triangle-exclamation"></i> STOCK BAJO
+                    </div>
+                ` : ''}
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full shadow-inner border border-black/10 inline-block shrink-0" style="background-color: ${item.hex}"></span>
+                            <h4 class="font-bold text-slate-800 text-sm">${item.nombre}</h4>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="editColorModal('${item.id}')" class="text-slate-300 hover:text-slate-600 p-1"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteColor('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+
+                    ${item.ancho ? `<p class="text-[11px] font-semibold text-slate-400 mb-2">Ancho: ${item.ancho}</p>` : ''}
+
+                    <div class="flex items-baseline justify-between mt-3 bg-slate-50 p-2 rounded-xl">
+                        <div>
+                            <span class="text-xs text-slate-400 block">Stock</span>
+                            <span class="text-xl font-black ${isLow ? 'text-amber-600' : 'text-slate-800'}">${item.cantidad}</span>
+                            <span class="text-[11px] font-medium text-slate-500">${item.unidad}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-400 block">Mínimo</span>
+                            <span class="text-xs font-semibold text-slate-600">${item.minimo}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <button onclick="updateColorStock('${item.id}', -1)" class="flex-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold py-1.5 rounded-xl text-xs transition">- 1</button>
+                    <button onclick="updateColorStock('${item.id}', 1)" class="flex-1 bg-slate-100 hover:bg-leaf-50 hover:text-leaf-600 text-slate-700 font-bold py-1.5 rounded-xl text-xs transition">+ 1</button>
+                </div>
+            `;
+            return card;
+        }
+
+        function updateColorStock(id, delta) {
+            const item = colorStock.find(c => c.id === id);
+            if (!item) return;
+
+            const newQty = Number(item.cantidad) + delta;
+            if (newQty < 0) return;
+
+            item.cantidad = newQty;
+            saveStorage();
+        }
+
+        function openModalColor() {
+            document.getElementById('form-color-stock').reset();
+            document.getElementById('color-id').value = '';
+            document.getElementById('color-hex').value = '#f43f5e';
+            document.getElementById('color-hex-label').innerText = '#f43f5e';
+            document.getElementById('modal-color-stock').classList.remove('hidden');
+        }
+
+        function closeModalColor() {
+            document.getElementById('modal-color-stock').classList.add('hidden');
+        }
+
+        function editColorModal(id) {
+            const c = colorStock.find(item => item.id === id);
+            if (!c) return;
+
+            document.getElementById('color-id').value = c.id;
+            document.getElementById('color-material-tipo').value = c.tipo;
+            document.getElementById('color-nombre').value = c.nombre;
+            document.getElementById('color-ancho').value = c.ancho || '';
+            document.getElementById('color-hex').value = c.hex || '#f43f5e';
+            document.getElementById('color-hex-label').innerText = c.hex || '#f43f5e';
+            document.getElementById('color-unidad').value = c.unidad;
+            document.getElementById('color-cantidad').value = c.cantidad;
+            document.getElementById('color-minimo').value = c.minimo;
+
+            document.getElementById('modal-color-stock').classList.remove('hidden');
+        }
+
+        function handleColorSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('color-id').value;
+            const tipo = document.getElementById('color-material-tipo').value;
+            const nombre = document.getElementById('color-nombre').value.trim();
+            const ancho = document.getElementById('color-ancho').value.trim();
+            const hex = document.getElementById('color-hex').value;
+            const unidad = document.getElementById('color-unidad').value.trim();
+            const cantidad = parseInt(document.getElementById('color-cantidad').value);
+            const minimo = parseInt(document.getElementById('color-minimo').value);
+
+            if (id) {
+                const idx = colorStock.findIndex(c => c.id === id);
+                if (idx !== -1) colorStock[idx] = { id, tipo, nombre, ancho, hex, unidad, cantidad, minimo };
+                showToast("Color actualizado correctamente");
+            } else {
+                colorStock.push({ id: 'c_' + Date.now(), tipo, nombre, ancho, hex, unidad, cantidad, minimo });
+                showToast("Nuevo color agregado al stock");
+            }
+
+            closeModalColor();
+            saveStorage();
+        }
+
+        function deleteColor(id) {
+            const color = colorStock.find(c => c.id === id);
+            const nombre = color ? `"${color.nombre}"` : 'este color';
+            
+            showConfirmModal(
+                "¿Quitar Color?",
+                `¿Deseas eliminar ${nombre} del inventario de stock?`,
+                () => {
+                    colorStock = colorStock.filter(c => c.id !== id);
+                    saveStorage();
+                    showToast("Color eliminado del stock");
+                }
+            );
+        }
+
+        function renderGeneralStockGrid() {
+            const grid = document.getElementById('grid-generales');
+            grid.innerHTML = '';
+
+            if (generalStock.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">No hay insumos generales registrados.</div>`;
+                return;
+            }
+
+            generalStock.forEach(item => {
+                const isLow = Number(item.cantidad) <= Number(item.minimo);
+                const card = document.createElement('div');
+                card.className = `bg-white p-4 rounded-2xl shadow-xs border transition flex flex-col justify-between ${
+                    isLow ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-100'
+                }`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between">
+                            <h4 class="font-bold text-slate-800 text-sm">${item.nombre}</h4>
+                            <div class="flex items-center gap-1">
+                                <button onclick="editGeneralModal('${item.id}')" class="text-slate-300 hover:text-slate-600 p-1"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="deleteGeneral('${item.id}')" class="text-slate-300 hover:text-rose-500 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-baseline justify-between mt-3 bg-slate-50 p-2 rounded-xl">
+                            <div>
+                                <span class="text-xs text-slate-400 block">Disponible</span>
+                                <span class="text-xl font-black ${isLow ? 'text-amber-600' : 'text-slate-800'}">${item.cantidad}</span>
+                                <span class="text-[11px] font-medium text-slate-500">${item.unidad}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 block">Mínimo</span>
+                                <span class="text-xs font-semibold text-slate-600">${item.minimo}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <button onclick="updateGeneralStock('${item.id}', -1)" class="flex-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold py-1.5 rounded-xl text-xs transition">- 1</button>
+                        <button onclick="updateGeneralStock('${item.id}', 1)" class="flex-1 bg-slate-100 hover:bg-leaf-50 hover:text-leaf-600 text-slate-700 font-bold py-1.5 rounded-xl text-xs transition">+ 1</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateGeneralStock(id, delta) {
+            const item = generalStock.find(g => g.id === id);
+            if (!item) return;
+
+            const newQty = Number(item.cantidad) + delta;
+            if (newQty < 0) return;
+
+            item.cantidad = newQty;
+            saveStorage();
+        }
+
+        function openModalGeneral() {
+            document.getElementById('form-general-stock').reset();
+            document.getElementById('general-id').value = '';
+            document.getElementById('modal-general-stock').classList.remove('hidden');
+        }
+
+        function closeModalGeneral() {
+            document.getElementById('modal-general-stock').classList.add('hidden');
+        }
+
+        function editGeneralModal(id) {
+            const g = generalStock.find(item => item.id === id);
+            if (!g) return;
+
+            document.getElementById('general-id').value = g.id;
+            document.getElementById('general-nombre').value = g.nombre;
+            document.getElementById('general-cantidad').value = g.cantidad;
+            document.getElementById('general-unidad').value = g.unidad;
+            document.getElementById('general-minimo').value = g.minimo;
+
+            document.getElementById('modal-general-stock').classList.remove('hidden');
+        }
+
+        function handleGeneralSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('general-id').value;
+            const nombre = document.getElementById('general-nombre').value.trim();
+            const cantidad = parseInt(document.getElementById('general-cantidad').value);
+            const unidad = document.getElementById('general-unidad').value.trim();
+            const minimo = parseInt(document.getElementById('general-minimo').value);
+
+            if (id) {
+                const idx = generalStock.findIndex(g => g.id === id);
+                if (idx !== -1) generalStock[idx] = { id, nombre, cantidad, unidad, minimo };
+                showToast("Insumo actualizado");
+            } else {
+                generalStock.push({ id: 's_' + Date.now(), nombre, cantidad, unidad, minimo });
+                showToast("Insumo general agregado");
+            }
+
+            closeModalGeneral();
+            saveStorage();
+        }
+
+        function deleteGeneral(id) {
+            const item = generalStock.find(g => g.id === id);
+            const nombre = item ? `"${item.nombre}"` : 'este insumo';
+            
+            showConfirmModal(
+                "¿Eliminar Insumo?",
+                `¿Deseas eliminar ${nombre} del inventario general?`,
+                () => {
+                    generalStock = generalStock.filter(g => g.id !== id);
+                    saveStorage();
+                    showToast("Insumo eliminado");
+                }
+            );
+        }
+
+        function renderGastosTable() {
+            const tbody = document.getElementById('tabla-gastos-body');
+            tbody.innerHTML = '';
+
+            if (gastos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">No hay gastos registrados.</td></tr>`;
+                return;
+            }
+
+            gastos.forEach(g => {
+                const badge = CATEGORY_COLORS[g.categoria] || CATEGORY_COLORS['Otros'];
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition duration-150";
+                tr.innerHTML = `
+                    <td class="py-3 px-5 text-slate-500 text-xs">${g.fecha || '-'}</td>
+                    <td class="py-3 px-5">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold ${badge.bg} ${badge.text}">
+                            ${g.categoria}
+                        </span>
+                    </td>
+                    <td class="py-3 px-5 text-slate-800 font-medium text-xs sm:text-sm">${g.descripcion}</td>
+                    <td class="py-3 px-5 text-right font-bold text-rose-600 text-xs sm:text-sm">${formatMoney(g.monto)}</td>
+                    <td class="py-3 px-5 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="editGasto('${g.id}')" class="p-1 text-slate-400 hover:text-blue-600 rounded"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteGasto('${g.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleGastoSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('gasto-id').value;
+            const categoria = document.getElementById('gasto-categoria').value;
+            const descripcion = document.getElementById('gasto-descripcion').value.trim();
+            const monto = parseFloat(document.getElementById('gasto-monto').value);
+            const fecha = document.getElementById('gasto-fecha').value;
+
+            if (id) {
+                const idx = gastos.findIndex(g => g.id === id);
+                if (idx !== -1) gastos[idx] = { id, fecha, categoria, descripcion, monto };
+                showToast("Gasto actualizado");
+            } else {
+                gastos.unshift({ id: 'g_' + Date.now(), fecha, categoria, descripcion, monto });
+                showToast("Nuevo gasto registrado");
+            }
+
+            resetGastoForm();
+            saveStorage();
+        }
+
+        function editGasto(id) {
+            const g = gastos.find(item => item.id === id);
+            if (!g) return;
+
+            document.getElementById('gasto-id').value = g.id;
+            document.getElementById('gasto-categoria').value = g.categoria;
+            document.getElementById('gasto-descripcion').value = g.descripcion;
+            document.getElementById('gasto-monto').value = g.monto;
+            document.getElementById('gasto-fecha').value = g.fecha || new Date().toISOString().split('T')[0];
+
+            document.getElementById('btn-save-gasto').innerHTML = `<i class="fa-solid fa-pen"></i> Actualizar`;
+            document.getElementById('btn-cancel-gasto').classList.remove('hidden');
+        }
+
+        function resetGastoForm() {
+            document.getElementById('form-gasto').reset();
+            document.getElementById('gasto-id').value = '';
+            document.getElementById('btn-save-gasto').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Gasto`;
+            document.getElementById('btn-cancel-gasto').classList.add('hidden');
+            setTodayDates();
+        }
+
+        function deleteGasto(id) {
+            const gasto = gastos.find(g => g.id === id);
+            const desc = gasto ? `"${gasto.descripcion}"` : 'este gasto';
+            
+            showConfirmModal(
+                "¿Eliminar Gasto?",
+                `¿Estás segura de eliminar el gasto de ${desc}?`,
+                () => {
+                    gastos = gastos.filter(g => g.id !== id);
+                    saveStorage();
+                    showToast("Gasto eliminado");
+                }
+            );
+        }
+
+        function filterGastosTable() {
+            const query = document.getElementById('filter-gastos').value.toLowerCase();
+            const rows = document.getElementById('tabla-gastos-body').getElementsByTagName('tr');
+            for (let row of rows) {
+                row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+            }
+        }
+
+        function renderVentasTable() {
+            const tbody = document.getElementById('tabla-ventas-body');
+            tbody.innerHTML = '';
+
+            if (ventas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">No hay ventas registradas.</td></tr>`;
+                return;
+            }
+
+            ventas.forEach(v => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition duration-150";
+                tr.innerHTML = `
+                    <td class="py-3 px-5 text-slate-500 text-xs">${v.fecha || '-'}</td>
+                    <td class="py-3 px-5">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-leaf-100 text-leaf-700">
+                            ${v.categoria}
+                        </span>
+                    </td>
+                    <td class="py-3 px-5 text-slate-800 font-medium text-xs sm:text-sm">${v.descripcion}</td>
+                    <td class="py-3 px-5 text-center font-semibold text-slate-700 text-xs sm:text-sm">${v.cantidad}</td>
+                    <td class="py-3 px-5 text-right font-bold text-leaf-600 text-xs sm:text-sm">${formatMoney(v.monto)}</td>
+                    <td class="py-3 px-5 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="editVenta('${v.id}')" title="Editar venta" class="p-1 text-slate-400 hover:text-blue-600 rounded"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            <button onclick="deleteVenta('${v.id}')" title="Eliminar venta" class="p-1 text-slate-400 hover:text-rose-600 rounded"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleVentaSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('venta-id').value;
+            const categoria = document.getElementById('venta-categoria').value;
+            const descripcion = document.getElementById('venta-descripcion').value.trim();
+            const cantidad = parseInt(document.getElementById('venta-cantidad').value);
+            const monto = parseFloat(document.getElementById('venta-monto').value);
+            const fecha = document.getElementById('venta-fecha').value;
+
+            if (id) {
+                const idx = ventas.findIndex(v => v.id === id);
+                if (idx !== -1) ventas[idx] = { id, fecha, categoria, descripcion, cantidad, monto };
+                showToast("Venta actualizada correctamente");
+            } else {
+                ventas.unshift({ id: 'v_' + Date.now(), fecha, categoria, descripcion, cantidad, monto });
+                showToast("¡Ingreso por venta registrado!");
+            }
+
+            resetVentaForm();
+            saveStorage();
+        }
+
+        function editVenta(id) {
+            const v = ventas.find(item => item.id === id);
+            if (!v) return;
+
+            document.getElementById('venta-id').value = v.id;
+            document.getElementById('venta-categoria').value = v.categoria;
+            document.getElementById('venta-descripcion').value = v.descripcion;
+            document.getElementById('venta-cantidad').value = v.cantidad;
+            document.getElementById('venta-monto').value = v.monto;
+            document.getElementById('venta-fecha').value = v.fecha || new Date().toISOString().split('T')[0];
+
+            document.getElementById('btn-save-venta').innerHTML = `<i class="fa-solid fa-pen"></i> Actualizar Ingreso`;
+            document.getElementById('btn-cancel-venta').classList.remove('hidden');
+        }
+
+        function resetVentaForm() {
+            document.getElementById('form-venta').reset();
+            document.getElementById('venta-id').value = '';
+            document.getElementById('btn-save-venta').innerHTML = `<i class="fa-solid fa-circle-plus"></i> Registrar Ingreso`;
+            document.getElementById('btn-cancel-venta').classList.add('hidden');
+            setTodayDates();
+        }
+
+        function deleteVenta(id) {
+            const venta = ventas.find(v => v.id === id);
+            const desc = venta ? `"${venta.descripcion}"` : 'esta venta';
+            
+            showConfirmModal(
+                "¿Eliminar Venta?",
+                `¿Estás segura de eliminar la venta de ${desc}? El balance de ingresos se recalculará automáticamente.`,
+                () => {
+                    ventas = ventas.filter(v => v.id !== id);
+                    saveStorage();
+                    showToast("Venta eliminada correctamente");
+                }
+            );
+        }
+
+        function filterVentasTable() {
+            const query = document.getElementById('filter-ventas').value.toLowerCase();
+            const rows = document.getElementById('tabla-ventas-body').getElementsByTagName('tr');
+            for (let row of rows) {
+                row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
