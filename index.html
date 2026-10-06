@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -91,5 +92,235 @@
                     <div class="flex items-center gap-2">
                         <button onclick="resetToDefaults()" title="Restablecer datos iniciales" 
                             class="text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-2">
-                            <i class="fa-solid fa-rotate-left
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span class="hidden sm:inline">Restablecer Datos</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex space-x-6 sm:space-x-8 border-t border-slate-100 pt-1 overflow-x-auto custom-scrollbar">
+                    <button id="tab-dashboard" onclick="switchTab('dashboard')" class="tab-btn active py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-chart-pie text-base"></i>
+                        Balance y Finanzas
+                    </button>
+                    <button id="tab-color-stock" onclick="switchTab('color-stock')" class="tab-btn text-slate-500 hover:text-slate-700 py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-palette text-base text-lilac-600"></i>
+                        Stock por Colores
+                        <span id="color-stock-alert-badge" class="hidden bg-amber-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+                    </button>
+                    <button id="tab-gastos" onclick="switchTab('gastos')" class="tab-btn text-slate-500 hover:text-slate-700 py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-receipt text-base"></i>
+                        Gastos Insumos
+                    </button>
+                    <button id="tab-ventas" onclick="switchTab('ventas')" class="tab-btn text-slate-500 hover:text-slate-700 py-3 px-1 text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-hand-holding-dollar text-base text-leaf-600"></i>
+                        Ventas e Ingresos
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 flex items-center gap-3 transition-all duration-300">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-leaf-400"></i>
+                <span id="toast-message" class="text-sm font-medium"></span>
+            </div>
+
+            <section id="view-dashboard" class="space-y-8">
+                <!-- Tarjetas KPI -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-rose-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Gastado</p>
+                            <h3 class="text-2xl font-black text-rose-600 mt-1" id="dash-gastos">$0</h3>
+                            <p class="text-xs text-slate-500 mt-1">Materiales e insumos</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-arrow-down-long"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-leaf-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ingresos</p>
+                            <h3 class="text-2xl font-black text-leaf-600 mt-1" id="dash-ingresos">$0</h3>
+                            <p class="text-xs text-slate-500 mt-1">Ventas realizadas</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-leaf-50 text-leaf-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-arrow-up-long"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Balance Neto</p>
+                            <h3 class="text-2xl font-black mt-1" id="dash-balance">$0</h3>
+                            <p class="text-xs text-slate-500 mt-1" id="dash-balance-lbl">Ganancia / Pérdida</p>
+                        </div>
+                        <div id="dash-balance-icon-bg" class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-scale-balanced" id="dash-balance-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-xs border border-lilac-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ventas Totales</p>
+                            <h3 class="text-2xl font-black text-slate-800 mt-1" id="dash-cant-ventas">0</h3>
+                            <p class="text-xs text-slate-500 mt-1">Pedidos entregados</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-lilac-50 text-lilac-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+                        <h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-bloom-500"></i>
+                            Balance Financiero (Ingresos vs. Gastos)
+                        </h2>
+                        <p class="text-xs text-slate-500 mb-4">Relación directa entre las ganancias de ventas y los costos de insumos.</p>
+                        <div class="relative h-64">
+                            <canvas id="chart-balance"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100">
+                        <h2 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-lilac-500"></i>
+                            Desglose de Gastos por Material
+                        </h2>
+                        <p class="text-xs text-slate-500 mb-4">Distribución del capital invertido ($62.300+)</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                            <div class="relative h-52">
+                                <canvas id="chart-gastos-cat"></canvas>
+                            </div>
+                            <div id="dashboard-cat-list" class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar">
+                                <!-- Dynamic JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-color-stock" class="hidden space-y-8">
+                <!-- Banner explicativo -->
+                <div class="bg-gradient-to-r from-lilac-500 via-rose-400 to-amber-400 p-6 rounded-3xl text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-extrabold flex items-center gap-2">
+                            <i class="fa-solid fa-palette text-2xl"></i>
+                            Control de Stock por Colores y Variedades
+                        </h2>
+                        <p class="text-xs text-rose-50 opacity-90 mt-1 max-w-2xl">
+                            Administra con precisión el stock de cada color para <b>Limpiapipas</b> y <b>Cintas de Raso</b>. Agrega nuevos tonos, ajusta las unidades disponibles y mantén tu inventario de insumos al día.
+                        </p>
+                    </div>
+                    <button onclick="openModalColor()" class="bg-white text-slate-900 hover:bg-rose-50 font-bold px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-plus-circle text-rose-500"></i>
+                        Añadir Nuevo Color
+                    </button>
+                </div>
+
+                <!-- Sub-Tabs Stock -->
+                <div class="flex border-b border-slate-200 space-x-6 text-sm font-semibold">
+                    <button id="subtab-limpiapipas" onclick="switchStockSubtab('limpiapipas')" class="pb-3 text-rose-600 border-b-2 border-rose-600 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Limpiapipas
+                    </button>
+                    <button id="subtab-cintas" onclick="switchStockSubtab('cintas')" class="pb-3 text-slate-400 hover:text-slate-600 flex items-center gap-2">
+                        <i class="fa-solid fa-ribbon"></i> Cintas de Raso
+                    </button>
+                    <button id="subtab-generales" onclick="switchStockSubtab('generales')" class="pb-3 text-slate-400 hover:text-slate-600 flex items-center gap-2">
+                        <i class="fa-solid fa-box-open"></i> Insumos Generales
+                    </button>
+                </div>
+
+                <!-- SUBSECCIÓN 1: LIMPIAPIPAS POR COLOR -->
+                <div id="stock-sec-limpiapipas" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            Inventario de Limpiapipas por Colores
+                        </h3>
+                        <span class="text-xs text-slate-400" id="count-limpiapipas">0 colores registrados</span>
+                    </div>
+
+                    <div id="grid-limpiapipas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <!-- Dynamic JS -->
+                    </div>
+                </div>
+
+                <!-- SUBSECCIÓN 2: CINTAS DE RASO POR COLOR -->
+                <div id="stock-sec-cintas" class="hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            Inventario de Cintas de Raso por Colores y Anchos
+                        </h3>
+                        <span class="text-xs text-slate-400" id="count-cintas">0 variedades registradas</span>
+                    </div>
+
+                    <div id="grid-cintas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <!-- Dynamic JS -->
+                    </div>
+                </div>
+
+                <!-- SUBSECCIÓN 3: INSUMOS GENERALES -->
+                <div id="stock-sec-generales" class="hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-lilac-500"></span>
+                            Insumos y Materiales de Soporte Generales
+                        </h3>
+                        <button onclick="openModalGeneral()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Nuevo Insumo General
+                        </button>
+                    </div>
+
+                    <div id="grid-generales" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Dynamic JS -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-gastos" class="hidden space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Formulario de Registro de Gastos -->
+                    <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-100 h-fit">
+                        <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-cart-plus text-rose-500"></i>
+                            Registrar Compras / Gastos
+                        </h2>
+
+                        <form id="form-gasto" onsubmit="handleGastoSubmit(event)" class="space-y-4">
+                            <input type="hidden" id="gasto-id" value="">
                             
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Material / Categoría *</label>
+                                <select id="gasto-categoria" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                                    <option value="Limpiapipas">Limpiapipas</option>
+                                    <option value="Cinta raso">Cinta raso</option>
+                                    <option value="Palitos">Palitos</option>
+                                    <option value="Silicona">Silicona</option>
+                                    <option value="Macetas">Macetas</option>
+                                    <option value="Otros">Otros insumos (Papel, cinta flora, etc.)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Descripción de la compra *</label>
+                                <input type="text" id="gasto-descripcion" placeholder="Ej. Paquete limpiapipas amarillo y verde" required
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Monto ($ ARS) *</label>
+                                    <input type="number" id="gasto-monto" min="1" step="0.01" placeholder="0.00" required
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold focus:bg-white focus:ring-2 focus:ring-rose-400 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fecha</label>
+                                    <input type="date" id="gasto-fecha" required
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px
