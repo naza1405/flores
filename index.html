@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gastos Flores - Control Financiero y Stock por Colores</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bloom: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                        },
+                        lilac: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            200: '#e9d5ff',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                        },
+                        leaf: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fdfbf7;
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #e11d48;
+            color: #e11d48;
+            font-weight: 700;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <div>
+        <header class="bg-white/90 backdrop-blur-md border-b border-rose-100 shadow-xs sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-gradient-to-tr from-bloom-500 to-lilac-500 p-3 rounded-2xl text-white shadow-md shadow-bloom-200">
+                            <i class="fa-solid fa-seedling text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                                Gastos Flores
+                                <span class="bg-rose-100 text-rose-800 text-[11px] px-2.5 py-0.5 rounded-full font-bold">Flores Eternas</span>
+                            </h1>
+                            <p class="text-xs text-slate-500">Control Financiero & Inventario Detallado por Colores</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetToDefaults()" title="Restablecer datos iniciales" 
+                            class="text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition flex items-center gap-2">
+                            <i class="fa-solid fa-rotate-left
+                            
